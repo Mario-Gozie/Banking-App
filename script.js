@@ -274,3 +274,27 @@ btnSort.addEventListener("click", function (e) {
   displayMovements(currentAccount.movements, !sorted);
   sorted = !sorted; // here, I am basically reversing the sorted to false. this simply changes sorted from for to true and true to force.
 });
+
+// PRACTICE OF GETTING DATA FROM THE UI WITH ARRAY.FROM() see below!
+
+// so below, I am saying, select all where there is a classe of movemnet__value and put all in an array using the Array.from method.
+
+labelBalance.addEventListener("click", function () {
+  const movementsUI = Array.from(
+    document.querySelectorAll(".movements__value")
+  );
+
+  console.log(movementsUI.map((el) => Number(el.textContent.replace("€", ""))));
+});
+
+// The above can be made simpler using see below
+// Here, I had to do the mapping in the event listener function. This was possible because Array.from() accepts a callback function.
+
+labelBalance.addEventListener("click", function () {
+  const movementsUI = Array.from(
+    document.querySelectorAll(".movements__value"),
+    (el) => Number(el.textContent.replace("€", ""))
+  );
+
+  console.log(movementsUI);
+});
