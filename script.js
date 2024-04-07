@@ -78,9 +78,13 @@ createUsernames(accounts);
 
 // DISPLAYING MOVEMENTS/TRANSACTIONS
 
-const displayMovements = function (movements) {
+const displayMovements = function (movements, sort = false) {
   containerMovements.innerHTML = ""; //Here I am basically saying that please whatever that is original inside the HTML file during the time of createion should be removed so I can use Javascrip to imput values into the container. this will remove everything manually entered using when creating the html file. this is similar to setting textContent = '' but textContent remove only the text file while innerHTML remove the whole html content.
-  movements.forEach((mov, i) => {
+
+  // The movs variable below is saying. if sort is true, slice the content of the movement argument to create a new array, then sort in ascending order, else give us the movement like that. I had to slice to create a new array because the sort method changes the original array. This is one of the situation where the slice method is perfect for creating a new array rather than the spread operator because we are in the middle of a chain. note that here, we are sorting in asccending order
+
+  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
+  movs.forEach((mov, i) => {
     const type = mov > 0 ? "deposit" : "withdrawal"; //Here I used a conditional to determine if this is a withrawal or deposit. I made this a variable because I will have to apply it in two places in the html file. see below and check out for '$' and curly braces '{}'
     const html = `<div class="movements__row">
     <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
@@ -259,4 +263,14 @@ btnClose.addEventListener("click", function (e) {
   }
   // Making Username and pin inactive after clicking on the close button
   inputClosePin.value = inputCloseUsername.value = "";
+});
+
+// Event Listener for Sort.
+let sorted = false; // this is to preserve the state of the sort argument as false. this will make to possible for the trasaction detail area or the display movement area as the case may be to return to its original state when the sorted button is clicked the second time.
+
+btnSort.addEventListener("click", function (e) {
+  e.preventDefault();
+  // Here, I simply set the sort argument to true using the ! sign on the the sorted variable which was originally false. You also remember that the sort arguement is also false where the display movements functions was declared.
+  displayMovements(currentAccount.movements, !sorted);
+  sorted = !sorted; // here, I am basically reversing the sorted to false. this simply changes sorted from for to true and true to force.
 });
