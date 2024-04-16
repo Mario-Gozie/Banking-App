@@ -4,18 +4,60 @@
 
 // Data
 
+// const account1 = {
+//   owner: "Jonas Schmedtmann",
+//   movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
+//   interestRate: 1.2,
+//   pin: 1111,
+// };
+
+// const account2 = {
+//   owner: "Jessica Davis",
+//   movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
+//   interestRate: 1.5,
+//   pin: 2222,
+// };
+
+// /// NEW SET OF ACCOUNT FOR FORMATTING THE DATES
 const account1 = {
-  owner: "Jonas Schmedtmann",
-  movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
-  interestRate: 1.2,
+  owner: `Jonas Schmedtmann`,
+  movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
+  interestRate: 1.2, //%
   pin: 1111,
+
+  movementsDates: [
+    `2019-11-18T21:31:17.178Z`,
+    `2019-12-23T07:42:02.383Z`,
+    `2020-01-28T09:15:04.904Z`,
+    `2020-04-01T10:17:24.185Z`,
+    `2020-05-08T14:11:59.604Z`,
+    `2020-05-27T17:01:17.194Z`,
+    `2020-07-11T23:36:17.929Z`,
+    `2019-07-12T10:51:36.790Z`,
+  ],
+
+  currency: `EUR`,
+  locale: `pt-PT`, //de-DE
 };
 
 const account2 = {
-  owner: "Jessica Davis",
+  owner: `Jessica Davis`,
   movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
   interestRate: 1.5,
   pin: 2222,
+
+  movementsDates: [
+    `2019-11-01T13:15:33.035Z`,
+    `2019-11-30T09:48:16.867Z`,
+    `2019-12-25T06:04:23.907Z`,
+    `2020-01-25T14:18:46.235Z`,
+    `2020-02-05T16:33:06.386Z`,
+    `2020-04-10T14:43:26.374Z`,
+    `2020-06-25T18:49:59.371Z`,
+    `2020-07-26T12:01:20.894Z`,
+  ],
+  currency: "USD",
+  locale: "en-US",
 };
 
 const account3 = {
@@ -78,24 +120,37 @@ createUsernames(accounts);
 
 // DISPLAYING MOVEMENTS/TRANSACTIONS
 
-const displayMovements = function (movements, sort = false) {
+const displayMovements = function (acc, sort = false) {
   containerMovements.innerHTML = ""; //Here I am basically saying that please whatever that is original inside the HTML file during the time of createion should be removed so I can use Javascrip to imput values into the container. this will remove everything manually entered using when creating the html file. this is similar to setting textContent = '' but textContent remove only the text file while innerHTML remove the whole html content.
 
   // The movs variable below is saying. if sort is true, slice the content of the movement argument to create a new array, then sort in ascending order, else give us the movement like that. I had to slice to create a new array because the sort method changes the original array. This is one of the situation where the slice method is perfect for creating a new array rather than the spread operator because we are in the middle of a chain. note that here, we are sorting in asccending order
 
-  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
+  const movs = sort
+    ? acc.movements.slice().sort((a, b) => a - b)
+    : acc.movements;
   movs.forEach((mov, i) => {
     const type = mov > 0 ? "deposit" : "withdrawal"; //Here I used a conditional to determine if this is a withrawal or deposit. I made this a variable because I will have to apply it in two places in the html file. see below and check out for '$' and curly braces '{}'
+
+    // To also loop over the movement(Transaction Date), we can use the index argument on the movement(Transaction) date array.
+    const date = new Date(acc.movementsDates[i]);
+    const day = `${date.getDate()}`.padStart(2, 0); // The pad start here is used to make sure that the day has a length of 2 and that a 0 is added to the front when we have only one digit.
+    const month = `${date.getMonth() + 1}`.padStart(2, 0); //We had to add one because month is zero based. and then made the month a length of 2 and to pad with zero in front if the value is less than 2
+    const year = date.getFullYear();
+    const displayDate = `${day}/${month}/${year}`;
+
+    // The HTML file.
     const html = `<div class="movements__row">
     <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
-    <div class="movements__value">${mov} €</div>
-  </div>`; // Here I copied a html file from the original html, and manipulated the class and text file using template literals.
+    <div class="movements__date">${displayDate}</div>
+    <div class="movements__value">${mov.toFixed(2)} €</div>
+  </div>`; // Here I copied a html file from the original html, and manipulated the class and text file using template literals. The toFixed method here give a string value of number rounded up. here, I want it to be rounded up to two decimal places. That's why you have 2 in there.
+
     containerMovements.insertAdjacentHTML("afterbegin", html);
     // To put the values into the html file container (in this case ), I will use a method called insert adjacentHTML. the insertAdjacent.html accepts two arguments. The positon and the actual value. The position could be after begining, which will place the latest data at the top/begining of the container. ther is beforeend position. which will place the newest data/value before the end of the container. there is also before begin, which will place the newest data before the beginining of the container. there is also afterend, which will place the newest data after the end of the container.
   });
 };
 
-displayMovements(account1.movements);
+displayMovements(account1);
 
 //JUST TO SHOW THE DIFFERENCE BETWEEN INNERHTML AND TEXTCONTENT CHECK THE CONSOLE.
 console.log(containerMovements.innerHTML);
@@ -105,7 +160,8 @@ console.log(containerMovements.textContent);
 
 const balance = function (acc) {
   acc.balance = acc.movements.reduce((acc, curr) => acc + curr, 0);
-  labelBalance.textContent = `${acc.balance}€`;
+  labelBalance.textContent = `${acc.balance.toFixed(2)}€`;
+  // The toFixed() method here will round up values to 2 decimal places.
 };
 
 balance(account1);
@@ -117,12 +173,13 @@ const calcDisplaySummary = function (acc) {
   const incomes = acc.movements
     .filter((incom) => incom > 0)
     .reduce((acc, inc) => acc + inc, 0);
-  labelSumIn.textContent = `${incomes}€`;
+  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
   // OUT
   const out = acc.movements
     .filter((wdl) => wdl < 0)
     .reduce((acc, widl) => acc + widl, 0);
-  labelSumOut.textContent = `${Math.abs(out)}€ `;
+  labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€ `;
+
   // INTEREST = 1.2% OF TOTAL AMOUNT for only interests that are up to 1 euro
   const interestRate = acc.interestRate / 100;
   const interest = acc.movements
@@ -131,7 +188,7 @@ const calcDisplaySummary = function (acc) {
     .filter((int) => int >= 1)
     .reduce((acc, int) => acc + int, 0);
 
-  labelSumInterest.textContent = `${interest}€`;
+  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
 };
 
 // calcDisplaySummary(account.);
@@ -141,7 +198,7 @@ console.log(accounts[0]);
 // This updates balance movements and summary
 const updateUIAndMovements = function (acc) {
   // DISPLAY MOVEMENTS
-  displayMovements(acc.movements);
+  displayMovements(acc);
   // DISPLAY BALANCE
   balance(acc);
 
@@ -150,6 +207,11 @@ const updateUIAndMovements = function (acc) {
 };
 // IMPLEMENTING THE LOGIN FEATURE OF THE APP.
 let currentAccount; //creating current account variable.
+
+// FAKE ALWAYS LOGGED IN
+currentAccount = account1;
+updateUIAndMovements(currentAccount);
+containerApp.style.opacity = 100;
 
 // EVENT LISTENERS
 btnLogin.addEventListener("click", function (e) {
@@ -171,6 +233,16 @@ btnLogin.addEventListener("click", function (e) {
     }`;
 
     containerApp.style.opacity = 100;
+
+    /// getting/creating the current date
+    const now = new Date();
+    const day = `${now.getDate()}`.padStart(2, 0); // The pad start here is used to make sure that the day has a length of 2 and that a 0 is added to the front when we have only one digit.
+    const month = `${now.getMonth() + 1}`.padStart(2, 0); //We had to add one because month is zero based. and then made the month a length of 2 and to pad with zero in front if the value is less than 2
+    const year = now.getFullYear();
+    const hour = `${now.getHours()}`.padStart(2, 0);
+    const min = `${now.getMinutes()}`.padStart(2, 0);
+
+    labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`;
 
     // CLEARING DETAIL FIELDS
     inputLoginusername.value = inputLoginpin.value = ""; // using equalto sign all through here will work because = or assignment operator works from right to left.
@@ -214,6 +286,10 @@ btnTranfer.addEventListener("click", function (e) {
     recieverAccount.movements.push(amount);
   }
 
+  // Adding the transfer Date to the date array.
+  currentAccount.movementsDates.push(new Date().toISOString()); //Here I am pushing the date to the movementDate string array for the current account using the new Date method to get the current date. I also used the toISOString to make the date to be in the same string format as the ones already in the date array.
+  recieverAccount.movementsDates.push(new Date().toISOString()); //Here I am pushing the date to the movementDate string array for the reciever using the new Date method to get the current date. I also used the toISOString to make the date to be in the same string format as the ones already in the date array.
+
   // UPDATING UI
   updateUIAndMovements(currentAccount);
 });
@@ -223,7 +299,8 @@ btnTranfer.addEventListener("click", function (e) {
 btnLoan.addEventListener("click", function (e) {
   e.preventDefault();
 
-  const amountRequested = Number(inputLoanAmount.value);
+  const amountRequested = Math.floor(inputLoanAmount.value); //Now here, I didnt convert to number using the number function because the Math.floor() method does type coasion by itself. in other words, it will convert strings to numbers automatically. The floor here will round any value down even if the person requesting is inputing a decimal value or float as it is called.
+
   if (
     amountRequested > 0 &&
     currentAccount.movements.some((movs) => movs >= amountRequested * 0.1)
@@ -231,6 +308,10 @@ btnLoan.addEventListener("click", function (e) {
     // Add to Movement
     currentAccount.movements.push(amountRequested);
   }
+
+  // Adding the Loan Date to the date array.
+  currentAccount.movementsDates.push(new Date().toISOString());
+  //Here I am pushing the date to the movementDate string array for the current account using the new Date method to get the current date. I also used the toISOString to make the date to be in the same string format as the ones already in the date array.
 
   // update the UI
   updateUIAndMovements(currentAccount);
@@ -271,7 +352,7 @@ let sorted = false; // this is to preserve the state of the sort argument as fal
 btnSort.addEventListener("click", function (e) {
   e.preventDefault();
   // Here, I simply set the sort argument to true using the ! sign on the the sorted variable which was originally false. You also remember that the sort arguement is also false where the display movements functions was declared.
-  displayMovements(currentAccount.movements, !sorted);
+  displayMovements(currentAccount, !sorted);
   sorted = !sorted; // here, I am basically reversing the sorted to false. this simply changes sorted from for to true and true to force.
 });
 
