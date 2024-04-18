@@ -31,9 +31,9 @@ const account1 = {
     `2020-01-28T09:15:04.904Z`,
     `2020-04-01T10:17:24.185Z`,
     `2020-05-08T14:11:59.604Z`,
-    `2020-05-27T17:01:17.194Z`,
-    `2020-07-11T23:36:17.929Z`,
-    `2019-07-12T10:51:36.790Z`,
+    `2024-04-14T17:01:17.194Z`,
+    `2024-04-16T23:36:17.929Z`,
+    `2024-04-18T10:51:36.790Z`,
   ],
 
   currency: `EUR`,
@@ -118,6 +118,30 @@ const createUsernames = function (accs) {
 
 createUsernames(accounts);
 
+// TAKING CARE OF MOVEMENT DATE WITH A FUNCTION
+const formatMovementDates = function (date, locale) {
+  const calcDaysPassed = (date1, date2) =>
+    Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24)); // Here I am creating a function that will give a date difference after converting it to timestamp.if the date has hours, time and seconds, there will be decimal points and to remove them, you use round function and for the abs, it is used to make sure there is no negative value for date difference. eg -10 days
+
+  // Logic to present dates as today, yesterday, two days ago, etc
+
+  const daysPassed = calcDaysPassed(new Date(), date); // Here I am checking for days passed. in otherwards calling the function.
+  console.log(daysPassed);
+  if (daysPassed === 0) return "Today";
+  if (daysPassed === 1) return "Yesterday";
+  if (daysPassed < 7) return `${daysPassed} days ago`;
+  else {
+    // const day = `${date.getDate()}`.padStart(2, 0); // The pad start here is used to make sure that the day has a length of 2 and that a 0 is added to the front when we have only one digit.
+    // const month = `${date.getMonth() + 1}`.padStart(2, 0); //We had to add one because month is zero based. and then made the month a length of 2 and to pad with zero in front if the value is less than 2
+    // const year = date.getFullYear();
+    // return `${day}/${month}/${year}`;
+
+    // INSTEAD OF FORMATING THE DATE MANUALLY LIKE ABOVE, LET ME INTERNATIONALIZE BELOW
+
+    return Intl.DateTimeFormat(locale).format(date);
+  }
+}; // this is a previous date format)
+
 // DISPLAYING MOVEMENTS/TRANSACTIONS
 
 const displayMovements = function (acc, sort = false) {
@@ -133,10 +157,7 @@ const displayMovements = function (acc, sort = false) {
 
     // To also loop over the movement(Transaction Date), we can use the index argument on the movement(Transaction) date array.
     const date = new Date(acc.movementsDates[i]);
-    const day = `${date.getDate()}`.padStart(2, 0); // The pad start here is used to make sure that the day has a length of 2 and that a 0 is added to the front when we have only one digit.
-    const month = `${date.getMonth() + 1}`.padStart(2, 0); //We had to add one because month is zero based. and then made the month a length of 2 and to pad with zero in front if the value is less than 2
-    const year = date.getFullYear();
-    const displayDate = `${day}/${month}/${year}`;
+    const displayDate = formatMovementDates(date, acc.locale);
 
     // The HTML file.
     const html = `<div class="movements__row">
@@ -213,6 +234,28 @@ currentAccount = account1;
 updateUIAndMovements(currentAccount);
 containerApp.style.opacity = 100;
 
+// INTERNATIONALIZATION.
+// This is a situation where the an app supports different languages. Lets apply this in dates and numbers formating
+// EXPERIMENTING WITH THE API THAT DOES INTERNATIONALIZATION.
+// const now = new Date();
+// Here, I want to change the labeldate textcontent. the its create as below. using new Intl then the DateTimeFormat, which takes the language or locale and then the format function which takes the date. see below
+//labelDate.textContent = new Intl.DateTimeFormat("en-US").format(now);
+
+// I can take the internationalization to a different level. by passing creating and passing in an option object to tell it how we want the date  to be, we can also include time. You can also get the locale of the user using navigator.language insetead of inputing it maually see below!
+
+// const options = {
+//   hour: "numeric",
+//   minute: "numeric",
+//   day: "numeric",
+//   month: "long",
+//   year: "numeric",
+//   weekday: "long",
+// };
+
+// const locale = navigator.language;
+
+// labelDate.textContent = new Intl.DateTimeFormat(locale, options).format(now);
+
 // EVENT LISTENERS
 btnLogin.addEventListener("click", function (e) {
   // Under normal circumstance, when you click on a button in a html form, it either reload the page or submit. to illustruste this, try adding an event listener to a button, then try printing something to the console, which will happen after clicking the button where the event listener was attached. This makes what is printed show as as a flash like in the case of submiting or reloading. but we want this to be steady. we need to make whats printed on the console to be steady.  this is done by inputing an argument which will represent all event (remember that methods have access to properties of an object or what they are called only if they are passed as arduements) and using the preventDefault method. This will prevent all natrual properties of the button.
@@ -234,15 +277,34 @@ btnLogin.addEventListener("click", function (e) {
 
     containerApp.style.opacity = 100;
 
-    /// getting/creating the current date
-    const now = new Date();
-    const day = `${now.getDate()}`.padStart(2, 0); // The pad start here is used to make sure that the day has a length of 2 and that a 0 is added to the front when we have only one digit.
-    const month = `${now.getMonth() + 1}`.padStart(2, 0); //We had to add one because month is zero based. and then made the month a length of 2 and to pad with zero in front if the value is less than 2
-    const year = now.getFullYear();
-    const hour = `${now.getHours()}`.padStart(2, 0);
-    const min = `${now.getMinutes()}`.padStart(2, 0);
+    /// GETTING/CREATING CURRENT DATE
 
-    labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`;
+    const now = new Date();
+    // const day = `${now.getDate()}`.padStart(2, 0); // The pad start here is used to make sure that the day has a length of 2 and that a 0 is added to the front when we have only one digit.
+    // const month = `${now.getMonth() + 1}`.padStart(2, 0); //We had to add one because month is zero based. and then made the month a length of 2 and to pad with zero in front if the value is less than 2
+    // const year = now.getFullYear();
+    // const hour = `${now.getHours()}`.padStart(2, 0);
+    // const min = `${now.getMinutes()}`.padStart(2, 0);
+
+    // labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`;
+
+    // THE ABOVE COMMENTED WAS HOW I DID THE DATE EARLIER, NOW I WANT TO USE THE INTERNALIZATION METHOD API WHICH IS BETTER AND EASIER
+
+    const options = {
+      hour: "numeric",
+      minute: "numeric",
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+      // weekday: "long",
+    };
+
+    // const locale = navigator.language; // This is how to get locale from users browser
+
+    labelDate.textContent = new Intl.DateTimeFormat(
+      currentAccount.locale,
+      options
+    ).format(now);
 
     // CLEARING DETAIL FIELDS
     inputLoginusername.value = inputLoginpin.value = ""; // using equalto sign all through here will work because = or assignment operator works from right to left.
