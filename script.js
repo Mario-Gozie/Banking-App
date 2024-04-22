@@ -144,6 +144,18 @@ const formatMovementDates = function (date, locale) {
 
 // DISPLAYING MOVEMENTS/TRANSACTIONS
 
+// FIRST CREATE A FUNCTION THAT WILL INTERNATIONALIZE THE CURRENCY. WE CAN NOW CALL THESE FUNCTION WHEREVER WE NEED TO SHOW MOVEMENTS OR BALANCE
+
+// internationalization of Currency.
+const formatCur = function (value, locale, currency) {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: currency,
+  }).format(value);
+};
+
+// ACTUAL DISPLAYING OF MOVEMENT
+
 const displayMovements = function (acc, sort = false) {
   containerMovements.innerHTML = ""; //Here I am basically saying that please whatever that is original inside the HTML file during the time of createion should be removed so I can use Javascrip to imput values into the container. this will remove everything manually entered using when creating the html file. this is similar to setting textContent = '' but textContent remove only the text file while innerHTML remove the whole html content.
 
@@ -159,12 +171,29 @@ const displayMovements = function (acc, sort = false) {
     const date = new Date(acc.movementsDates[i]);
     const displayDate = formatMovementDates(date, acc.locale);
 
-    // The HTML file.
+    // internationalization of Currency.
+    // const formattedMov = new Intl.NumberFormat(acc.locale, {
+    //   style: "currency",
+    //   currency: acc.currency,
+    // }).format(mov);
+
+    const formattedMov = formatCur(mov, acc.locale, acc.currency);
+
     const html = `<div class="movements__row">
     <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
     <div class="movements__date">${displayDate}</div>
-    <div class="movements__value">${mov.toFixed(2)} €</div>
-  </div>`; // Here I copied a html file from the original html, and manipulated the class and text file using template literals. The toFixed method here give a string value of number rounded up. here, I want it to be rounded up to two decimal places. That's why you have 2 in there.
+    <div class="movements__value">${formattedMov}</div>
+  </div>`;
+
+    // I did this before internationalization
+    // The HTML file.
+    //   const html = `<div class="movements__row">
+    //   <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
+    //   <div class="movements__date">${displayDate}</div>
+    //   <div class="movements__value">${mov.toFixed(2)} €</div>
+    // </div>`;
+
+    // Above, I copied a html file from the original html, and manipulated the class and text file using template literals. The toFixed method here give a string value of number rounded up. here, I want it to be rounded up to two decimal places. That's why you have 2 in there.
 
     containerMovements.insertAdjacentHTML("afterbegin", html);
     // To put the values into the html file container (in this case ), I will use a method called insert adjacentHTML. the insertAdjacent.html accepts two arguments. The positon and the actual value. The position could be after begining, which will place the latest data at the top/begining of the container. ther is beforeend position. which will place the newest data/value before the end of the container. there is also before begin, which will place the newest data before the beginining of the container. there is also afterend, which will place the newest data after the end of the container.
@@ -181,8 +210,13 @@ console.log(containerMovements.textContent);
 
 const balance = function (acc) {
   acc.balance = acc.movements.reduce((acc, curr) => acc + curr, 0);
-  labelBalance.textContent = `${acc.balance.toFixed(2)}€`;
-  // The toFixed() method here will round up values to 2 decimal places.
+
+  // // FORMATTING BALANCE BEFORE INTERNATIONALIZATION
+  // labelBalance.textContent = `${acc.balance.toFixed(2)}€`;
+  // // The toFixed() method here will round up values to 2 decimal places.
+
+  // USING THE INTERNATIONALIZATION FUNCTINO TO CREATE FORMAT THE BALANCE
+  labelBalance.textContent = formatCur(acc.balance, acc.locale, acc.currency);
 };
 
 balance(account1);
@@ -194,14 +228,26 @@ const calcDisplaySummary = function (acc) {
   const incomes = acc.movements
     .filter((incom) => incom > 0)
     .reduce((acc, inc) => acc + inc, 0);
-  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
+
+  //FORMATTING BEFORE INTERNATIONALIZATION
+  // labelSumIn.textContent = `${incomes.toFixed(2)}€`;
+
+  //FORMATTING WITHE THE INTERNATIONALIZATION FUNCTION.
+  labelSumIn.textContent = formatCur(incomes, acc.locale, acc.currency);
+
   // OUT
   const out = acc.movements
     .filter((wdl) => wdl < 0)
     .reduce((acc, widl) => acc + widl, 0);
-  labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€ `;
+
+  // //FORMATTING BEFORE INTERNATIONALIZATION
+  // labelSumOut.textContent = `${Math.abs(out).toFixed(2)}€ `;
+
+  //FORMATTING WITHE THE INTERNATIONALIZATION FUNCTION.
+  labelSumOut.textContent = formatCur(Math.abs(out), acc.locale, acc.currency);
 
   // INTEREST = 1.2% OF TOTAL AMOUNT for only interests that are up to 1 euro
+
   const interestRate = acc.interestRate / 100;
   const interest = acc.movements
     .filter((incom) => incom > 0)
@@ -209,7 +255,11 @@ const calcDisplaySummary = function (acc) {
     .filter((int) => int >= 1)
     .reduce((acc, int) => acc + int, 0);
 
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
+  //   //FORMATTING BEFORE INTERNATIONALIZATION
+  // labelSumInterest.textContent = `${interest.toFixed(2)}€`;
+
+  //FORMATTING WITHE THE INTERNATIONALIZATION FUNCTION.
+  labelSumInterest.textContent = formatCur(interest, acc.locale, acc.currency);
 };
 
 // calcDisplaySummary(account.);
@@ -226,13 +276,60 @@ const updateUIAndMovements = function (acc) {
   // DISPLAY SUMMARY
   calcDisplaySummary(acc);
 };
-// IMPLEMENTING THE LOGIN FEATURE OF THE APP.
-let currentAccount; //creating current account variable.
 
-// FAKE ALWAYS LOGGED IN
-currentAccount = account1;
-updateUIAndMovements(currentAccount);
-containerApp.style.opacity = 100;
+// CREATING A SEPERATE FUNTION THAT WILL START THE LOGOUT TIMER
+
+const startLogOutTimer = function () {
+  // This tick function below is the counter function. it is created within so that I can call it immidiately and then put it in a setInterval function so that it will be called each second. if I create it within the set interval function, it will  wait for a second before it starts running. so creating it outside first, calling it first before putting it into a setInterval will make it start counting as soon as one logs in.
+
+  const tick = function () {
+    // and in each call, print the remaining time to the user interface
+    //Convert the time to minutes
+    const min = String(Math.trunc(time / 60)).padStart(2, 0); //To remove the decimal part of the minutes, I will use a Math.trunc. The padStart here make the minutes only two digits and whenever it is only one, it adds zero (0) to the front. remember padstart, padEnd and other pad methods works on only strings that why I had to convert to strings first.
+
+    // getting seconds
+    const sec = String(time % 60).padStart(2, 0); // seconds is the remainder of dividing seconds by 60. The padStart here make the seconds only two digits and whenever it is only one, it adds zero (0) to the front. remember padstart, padEnd and other pad methods works on only strings that why I had to convert to strings first.
+
+    labelTimmer.textContent = `${min}:${sec}`;
+
+    // when the time is 0 seconds, stop timmer to avoid Negative values and log out user. but while doing this, we want to clear the timer. Remember that to clear a SETTIMEOUT, we use ClearTimer function and this settimeout funtion must be in a variable which must be passed into the SetTimeOut function. but to Remove a setInterval, we use a clearInterval. The setInterval must be in a variable which will be contained in the clearInterval. see below
+
+    // To Make the app close when the time is zero, we need to check for zero before reducing. remember document flow is followed here. if you reduce before checking for zero, the app will close while in 1 second.
+    if (time === 0) {
+      //clearing the timer when it gets to zero to avoid negative.
+
+      clearInterval(timer);
+
+      // Below, I am login the User out by setting opacity to zero (0) and changing the text content of the welcome message.
+
+      labelWelcome.textContent = `Log in to get started`;
+
+      containerApp.style.opacity = 0;
+    }
+
+    // after each call decrease time by 1
+    time--;
+  };
+
+  //set the time to seconds
+  let time = 120;
+
+  // calling the tick so it starts running immediately
+  tick();
+
+  //calling the tick inside a set interval
+  const timer = setInterval(tick, 1000);
+
+  return timer; // This will help make each time someone logs in, a new timer will be called. see where the global timer variable was created with the current account. also see where the login event listener is, this will help you uncerstand what I am talking about.
+};
+
+// IMPLEMENTING THE LOGIN FEATURE OF THE APP.
+let currentAccount, timer; //creating current account variable and timer variable. setting timer and current account here will make, each time someone logs in, a new timer will be set. see the where the SetLogOutTimer function was created and where the login timer was resent in the login area.
+
+// // FAKE ALWAYS LOGGED IN
+// currentAccount = account1;
+// updateUIAndMovements(currentAccount);
+// containerApp.style.opacity = 100;
 
 // INTERNATIONALIZATION.
 // This is a situation where the an app supports different languages. Lets apply this in dates and numbers formating
@@ -313,6 +410,10 @@ btnLogin.addEventListener("click", function (e) {
 
     inputLoginusername.blur();
 
+    // CALLING THE TIMEOUT FUNCTION
+    if (timer) clearInterval(timer); // Here, I am saying if timer. This is to prevent clash of timers. that's timer of one person clashing with timer of another. if you chech the startLogOutTimer function where it was created, it was returned then on the global variable, it a timer was created alongside with current accout. then below, that timer variable was reset to startLogOutTimer. This will make for each time someone logs in, a new timer will be called.
+    timer = startLogOutTimer();
+
     // THE DISPLAY MOVEMENTS, DISPLAY MOVEMENTS, DISPLAY BALANCE WILL BE REPEATED IN THE TRANSFER SECTION SO LET ME PUT ALL FUNCTIONS INTO A FUNCTION.
     //   // DISPLAY MOVEMENTS
     //   displayMovements(currentAccount.movements);
@@ -354,6 +455,11 @@ btnTranfer.addEventListener("click", function (e) {
 
   // UPDATING UI
   updateUIAndMovements(currentAccount);
+
+  // One goal of having a timer in this app is that if the user does not do anthing, it logs him out. so here, I need to set a timer so that if he makes a transfer, the timer will start again.
+  // Reset Timer
+  clearInterval(timer);
+  timer = startLogOutTimer();
 });
 
 // ASSUMING THE BANK SAYS THEY WILL ONLY GRANT LOAN ONLY IF THER IS AT LEAST A SINGLE DEPOSIT OF THE LOAN AMOUNT.
@@ -367,16 +473,22 @@ btnLoan.addEventListener("click", function (e) {
     amountRequested > 0 &&
     currentAccount.movements.some((movs) => movs >= amountRequested * 0.1)
   ) {
-    // Add to Movement
-    currentAccount.movements.push(amountRequested);
+    // we want to use a setTimeout to make loan request delay a bit by 2.5 seconds (=2500 miliseconds)see below
+    setTimeout(function () {
+      // Add to Movement
+      currentAccount.movements.push(amountRequested);
+
+      // Adding the Loan Date to the date array.
+      currentAccount.movementsDates.push(new Date().toISOString());
+      //Here I am pushing the date to the movementDate string array for the current account using the new Date method to get the current date. I also used the toISOString to make the date to be in the same string format as the ones already in the date array.
+
+      // update the UI
+      updateUIAndMovements(currentAccount);
+
+      clearInterval(timer);
+      timer = startLogOutTimer();
+    }, 2500);
   }
-
-  // Adding the Loan Date to the date array.
-  currentAccount.movementsDates.push(new Date().toISOString());
-  //Here I am pushing the date to the movementDate string array for the current account using the new Date method to get the current date. I also used the toISOString to make the date to be in the same string format as the ones already in the date array.
-
-  // update the UI
-  updateUIAndMovements(currentAccount);
   inputLoanAmount.value = "";
 });
 // CLOSING AN ACCOUNT
